@@ -1,0 +1,554 @@
+# Kubernetes Hands-on with KIND
+
+## Official Documentation
+
+https://kind.sigs.k8s.io/docs/user/quick-start
+
+---
+
+# What is KIND?
+
+**KIND = Kubernetes IN Docker**
+
+Instead of creating real VMs or cloud instances, KIND creates Kubernetes nodes as Docker containers.
+
+
+Laptop
+ └── Docker
+      └── Kind Cluster
+            ├── Control Plane
+            ├── Worker Node 1
+            └── Worker Node 2
+
+
+## Benefits
+
+- Free
+- Lightweight
+- Fast Setup
+- Perfect for Learning Kubernetes
+- Runs Completely on Local Machine
+
+---
+
+# Install Docker
+
+Verify Docker is installed and running:
+
+
+docker --version
+docker ps
+
+
+---
+
+# Install KIND
+
+
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.30.0/kind-linux-amd64
+
+chmod +x ./kind
+sudo mv ./kind /usr/local/bin/kind
+
+Verify Installation:
+kind version
+
+
+---
+
+# Install kubectl
+
+
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+
+
+Verify Installation:
+kubectl version --client
+
+
+---
+
+# Check Existing Clusters
+
+kind get clusters
+
+
+# Create Single Node Cluster
+
+
+kind create cluster --name single-cluster
+
+
+# Get Cluster Information:
+
+kubectl cluster-info
+kubectl get nodes -o wide
+
+
+---
+
+# Delete Cluster
+
+
+kind delete cluster --name single-cluster
+
+
+---
+
+# Create Multi-Node Cluster
+
+Create a file:
+
+## kind-multinode.yaml
+
+yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+
+nodes:
+- role: control-plane
+- role: worker
+- role: worker
+
+
+# Create Cluster:
+
+
+kind create cluster \
+  --name multi-cluster \
+  --config kind-multinode.yaml
+
+
+Verify:
+
+kubectl get nodes
+
+---
+
+# View Kubernetes Nodes as Docker Containers
+
+
+docker ps
+
+
+Example Output:
+
+text
+prod-demo-control-plane
+prod-demo-worker
+prod-demo-worker2
+prod-demo-worker3
+
+
+---
+
+# Understanding Kubernetes Architecture
+
+text
+Laptop
+ └── Docker
+      └── Kind Cluster
+            ├── Control Plane
+            ├── Worker Node 1
+            └── Worker Node 2
+
+
+## Control Plane Components
+
+- API Server
+- Scheduler
+- Controller Manager
+- ETCD
+
+## Worker Node Components
+
+- Kubelet
+- Kube Proxy
+- Container Runtime
+- Pods
+
+---
+
+# Kubernetes Commands Cheat Sheet
+
+# Cluster
+
+kubectl cluster-info
+kubectl version
+kubectl get nodes
+kubectl get nodes -o wide
+kubectl describe node <node-name>
+
+# Pods
+
+kubectl run nginx --image=nginx
+kubectl get pods
+kubectl get pods -o wide
+kubectl get pods -A
+kubectl get pods -w
+kubectl describe pod <pod-name>
+kubectl delete pod <pod-name>
+kubectl logs <pod-name>
+kubectl logs -f <pod-name>
+kubectl exec -it <pod-name> -- bash
+
+# Deployments
+
+kubectl create deployment nginx --image=nginx
+kubectl get deployments
+kubectl describe deployment nginx
+kubectl delete deployment nginx
+kubectl scale deployment nginx --replicas=3
+
+# ReplicaSets
+
+kubectl get rs
+kubectl describe rs
+
+# Services
+
+kubectl expose deployment nginx --port=80 --type=ClusterIP
+kubectl expose deployment nginx --port=80 --type=NodePort
+kubectl get svc
+kubectl describe svc nginx
+kubectl delete svc nginx
+
+# Port Forward
+
+kubectl port-forward pod/nginx 8080:80
+kubectl port-forward svc/nginx 8080:80
+
+# Namespaces
+
+kubectl get ns
+kubectl create ns dev
+kubectl delete ns dev
+kubectl get pods -n dev
+
+# ConfigMaps
+
+kubectl create configmap app-config --from-literal=ENV=DEV
+kubectl get configmap
+kubectl describe configmap app-config
+kubectl delete configmap app-config
+
+# Secrets
+
+kubectl create secret generic db-secret \
+--from-literal=username=admin \
+--from-literal=password=admin123
+
+kubectl get secrets
+kubectl describe secret db-secret
+kubectl delete secret db-secret
+
+# YAML
+
+kubectl apply -f deployment.yaml
+kubectl delete -f deployment.yaml
+kubectl get deployment nginx -o yaml
+kubectl get pod nginx -o yaml
+
+# Rolling Updates
+
+kubectl set image deployment/nginx nginx=nginx:1.25
+kubectl rollout status deployment/nginx
+kubectl rollout history deployment/nginx
+kubectl rollout undo deployment/nginx
+
+# Labels
+
+kubectl label pod nginx env=dev
+kubectl get pods --show-labels
+kubectl get pods -l env=dev
+
+# Annotations
+
+kubectl annotate pod nginx owner=rajpal
+
+# Resources
+
+kubectl top nodes
+kubectl top pods
+
+# Events
+
+kubectl get events
+kubectl get events --sort-by=.metadata.creationTimestamp
+
+# Contexts
+
+kubectl config get-contexts
+kubectl config current-context
+kubectl config use-context <context-name>
+
+# Troubleshooting
+
+kubectl get all
+kubectl get all -A
+kubectl describe pod <pod-name>
+kubectl logs <pod-name>
+kubectl exec -it <pod-name> -- bash
+kubectl get events
+kubectl top pods
+kubectl top nodes
+
+# Shortcuts
+
+kubectl get po
+kubectl get svc
+kubectl get deploy
+kubectl get rs
+kubectl get ns
+
+# Delete Resources
+
+kubectl delete pod <pod-name>
+kubectl delete deployment <deployment-name>
+kubectl delete svc <service-name>
+kubectl delete ns <namespace>
+kubectl delete all --all
+
+# Useful
+
+kubectl api-resources
+kubectl explain pod
+kubectl explain deployment
+kubectl explain service
+kubectl auth can-i create pods
+
+# Watch Resources
+
+watch kubectl get pods
+watch kubectl get nodes
+
+# Everything
+
+kubectl get all
+kubectl get all -A
+
+
+
+# deployment files
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: nginx-deployment
+
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: nginx
+
+  template:
+    metadata:
+      labels:
+        app: nginx
+
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+
+        ports:
+        - containerPort: 80
+
+-----------
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: nginx-service
+
+spec:
+  selector:
+    app: nginx
+
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+  type: ClusterIP
+
+-------------
+
+  apiVersion: v1
+kind: Service
+
+metadata:
+  name: nginx-nodeport
+
+spec:
+  selector:
+    app: nginx
+
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30080
+
+  type: NodePort
+
+---------------
+
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: app-config
+
+data:
+  ENV: DEV
+  APP_NAME: Kubernetes Workshop
+  REGION: INDIA
+
+----------------
+
+apiVersion: v1
+kind: Secret
+
+metadata:
+  name: db-secret
+
+type: Opaque
+
+data:
+  username: YWRtaW4=
+  password: YWRtaW4xMjM=
+
+---------------
+
+# deployment-with-configmap.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: nginx-config-demo
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: nginx-config
+
+  template:
+    metadata:
+      labels:
+        app: nginx-config
+
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+
+        env:
+        - name: ENV
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: ENV
+
+kubectl exec -it <pod-name> -- env | grep ENV
+
+
+-----------
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: nginx-secret-demo
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: nginx-secret
+
+  template:
+    metadata:
+      labels:
+        app: nginx-secret
+
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+
+        env:
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: username
+
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: password
+
+
+-----------------------------
+
+# How to Simulate LoadBalancer?
+
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.5/config/manifests/metallb-native.yaml
+
+
+
+
+
+
+
+
+# ingress
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+
+
+
+kubectl create deployment app1 --image=nginx
+kubectl expose deployment app1 --port=80 --type=ClusterIP
+
+kubectl create deployment app2 --image=httpd
+kubectl expose deployment app2 --port=80 --type=ClusterIP
+
+
+-----------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: demo.local
+    http:
+      paths:
+      - path: /app1
+        pathType: Prefix
+        backend:
+          service:
+            name: app1
+            port:
+              number: 80
+
+      - path: /app2
+        pathType: Prefix
+        backend:
+          service:
+            name: app2
+            port:
+              number: 80

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: nginx-config-demo
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: nginx-config
+
+  template:
+    metadata:
+      labels:
+        app: nginx-config
+
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+
+        env:
+        - name: ENV
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: ENV
